@@ -1,0 +1,19 @@
+/* Overrides mínimos: todo lo demás (navbar, footer, breadcrumb, form-control,
+   btn-primary, wizard-steps, modal) viene del CSS real de gob.mx/IMSS en vendor/. */
+
+.captcha-placeholder {
+  display: inline-block;
+  padding: 8px 14px;
+  background: repeating-linear-gradient(45deg, #eee, #eee 4px, #f7f7f7 4px, #f7f7f7 8px);
+  border: 1px solid #ddd;
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: #444;
+  text-decoration: line-through;
+}
+
+.navbar-brand-logo img {
+  height: 40px;
+}

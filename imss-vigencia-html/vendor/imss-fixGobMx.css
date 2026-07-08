@@ -1,0 +1,39 @@
+.error {
+	font-size: small;
+}
+
+.ui-dialog {
+	padding: 0
+}
+
+.ui-corner-all {
+	border-radius: 0
+}
+
+.ui-dialog .ui-widget-header {
+	background: #393c3e
+}
+
+.ui-dialog .ui-dialog-title {
+	color: #fff;
+	text-align: center;
+	width: 100%;
+	text-decoration: none;
+	font-weight: normal
+}
+
+.ui-dialog .ui-dialog-titlebar {
+	color: #fff;
+	text-align: center;
+	width: 100%;
+	text-decoration: none;
+	font-weight: normal
+}
+
+.ui-dialog .ui-dialog-buttonpane {
+	border-width: 0
+}
+
+.form-horizontal .control-label {
+	text-align: left;
+}

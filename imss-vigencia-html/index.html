@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title> Gestión de asegurados</title>
+
+<!-- CSS real de gob.mx / IMSS, descargados tal cual del sitio en producción -->
+<link rel="stylesheet" href="vendor/gobmx-main.css">
+<link rel="stylesheet" href="vendor/imss-portal.css">
+<link rel="stylesheet" href="vendor/imss-fixGobMx.css">
+<link rel="stylesheet" href="styles.css">
+
+<!-- Widget de dictado por voz: única línea que necesita el sitio de gobierno -->
+<script src="widget/voice-assistant-widget.js" defer></script>
+</head>
+<body>
+
+<header>
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMainCollapse">
+        <span class="sr-only">Interruptor de Navegación</span>
+        <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand-logo" href="https://www.gob.mx/"><img src="vendor/img/logo_blanco.svg" alt="gobierno de mexico"></a>
+    </div>
+    <div class="collapse navbar-collapse" id="navbarMainCollapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="https://www.gob.mx/tramites">Trámites</a></li>
+        <li><a href="https://www.gob.mx/gobierno">Gobierno</a></li>
+        <li><a href="https://www.gob.mx/busqueda"><span class="sr-only">Búsqueda</span><i class="icon-search"></i></a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+</header>
+
+<main class="page">
+  <div class="container contenedor">
+
+    <ol class="breadcrumb">
+      <li><a href="http://www.imss.gob.mx"><i class="icon icon-home"></i></a></li>
+      <li><a href="http://www.imss.gob.mx/servicios-digitales">Trámites</a></li>
+      <li class="active">Solicitud de constancia de vigencia de derechos</li>
+    </ol>
+
+    <div class="row">
+      <div class="col-sm-7">
+        <h3>Solicitud de constancia de vigencia de derechos</h3>
+      </div>
+    </div>
+
+    <ul class="wizard-steps">
+      <li class="completed">
+        <h5>Paso 1</h5>
+        <span>Iniciar trámite</span>
+      </li>
+      <li>
+        <h5>Paso 2</h5>
+        <span>Finalizar trámite</span>
+      </li>
+    </ul>
+
+    <div>Ingresa los siguientes datos:</div>
+
+    <div>
+      Para realizar este trámite, debes tener a la mano:
+      <br/>
+      <ul>
+        <li>CURP</li>
+        <li>NSS (Número de Seguridad Social)</li>
+        <li>Correo electrónico válido, el cual será asociado a tu CURP</li>
+      </ul>
+    </div>
+
+    <br>
+
+    <div class="alert alert-danger" style="display:none" id="divErrorCampos"></div>
+    <div class="alert alert-danger" style="display:none" id="erroresCaptura"></div>
+
+    <form id="registroAseguradoDatosBasicosForm" class="form-horizontal" role="form" action="#" method="post" onsubmit="return false;">
+      <input type="hidden" id="enviarCorreo" name="enviarCorreo" value="true"/>
+
+      <div class="form-group">
+        <label for="registroCurp" class="col-md-4 col-sm-5 col-xs-12 control-label">
+          CURP<span class="required">*</span>:
+        </label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          <input id="registroCurp" name="curp" class="form-control" placeholder="Ingresa tu CURP" type="text" maxlength="18"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-md-4 col-sm-5 col-xs-12 control-label"></label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          ¿No te sabes tu CURP? <a href="https://www.gob.mx/curp/" target="_blank">Consúltala aquí.</a>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="nss" class="col-md-4 col-sm-5 col-xs-12 control-label">
+          NSS (Número de Seguridad Social)<span class="required">*</span>:
+        </label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          <input id="nss" name="nss" class="form-control" placeholder="Ingresa tu Número de Seguridad Social" type="text" maxlength="11"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-md-4 col-sm-5 col-xs-12 control-label"></label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          ¿No te sabes tu NSS? <a href="#" target="_blank">Consúltalo aquí.</a>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="correoInput" class="col-md-4 col-sm-5 col-xs-12 control-label">
+          Correo electrónico<span class="required">*</span>:
+        </label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          <input id="correoInput" name="correoElectronico.correo" class="form-control" placeholder="Ingresa tu correo" type="text" maxlength="100"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="correoConfirmacionInput" class="col-md-4 col-sm-5 col-xs-12 control-label">
+          Confirma tu correo electrónico<span class="required">*</span>:
+        </label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          <input id="correoConfirmacionInput" name="correoElectronicoFiscal.correo" class="form-control" placeholder="Confirma tu correo" type="text" maxlength="100"/>
+          <div id="errorWrapperAux" style="display:none;">
+            <span class="error" id="mailConfirmacionErrors"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="captcha" class="col-md-4 col-sm-5 col-xs-12 control-label" style="font-weight:normal;">
+          Escribe las letras de la imagen que se muestre<span class="required">*</span>:
+          <label style="font-size:small;">(Usa mayúsculas y minúsculas)</label>
+        </label>
+        <div class="col-md-4 col-sm-7 col-xs-12">
+          <div class="row">
+            <div class="col-sm-7">
+              <div id="captchaImg" class="captcha-placeholder">A9xK2q</div>
+            </div>
+            <div class="col-sm-1">
+              <img alt="Cambiar captcha" src="vendor/img/refresh.png" id="refreshCaptcha" style="cursor:pointer;"/>
+            </div>
+            <div class="col-sm-4">
+              <input type="text" name="captcha" size="15" maxlength="10" class="form-control" style="width:100%;" placeholder="Captura"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <div class="row" id="botonesConsultaVigencia">
+        <div class="col-sm-3 text-left" style="padding:10px;">
+          <span id="labelCamposObligatoriosGeneral" class="required">*</span> Campos obligatorios
+        </div>
+        <div class="col-sm-5 text-right">
+          <button type="button" id="continuar" class="btn btn-primary">Continuar</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="alert alert-info" style="margin-top:20px">
+      <p><strong>Aviso de privacidad simplificado</strong></p>
+      La recolección de datos personales se lleva a cabo a través de la página
+      electrónica <a href="#" target="_blank">https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/vigencia</a>
+      cuyo administrador y responsable del tratamiento
+      es la Coordinación de Clasificación de Empresas y Vigencia de Derechos del Instituto Mexicano del Seguro Social.
+      Los datos personales que se recaban serán utilizados con la finalidad de generar y obtener la Constancia de
+      vigencia de derechos para recibir servicio médico ante el IMSS con Homoclave IMSS-02-020-B.
+      Si deseas conocer nuestro aviso de privacidad integral, lo podrás consultar en el portal:
+      <a href="#" target="_blank">https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/avisoVigencia.jsp</a>
+    </div>
+
+  </div>
+</main>
+
+<!-- Modal real de Bootstrap 3 (mismas clases que usa el sitio original) -->
+<div id="myModalActualizacion" class="modal" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <p>Actualización necesaria</p>
+      </div>
+      <div class="modal-body">
+        <p>Existe otro correo electrónico vinculado a sus datos, si usted no lo reconoce puede actualizarlo continuando en este trámite.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="submitCancelar" type="button" class="btn btn-secondary">Salir</button>
+        <button id="submitContinuar" type="button" class="btn btn-primary active">Continuar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="modalBackdrop" class="modal-backdrop" style="display:none;"></div>
+
+<footer class="main-footer">
+  <div class="container">
+    <div class="bottom-buffer-footer row">
+      <div class="col-sm-3 logo-footer navbar-footer-logo">
+        <img src="vendor/img/logo_blanco.svg" alt="logo gobierno de méxico" class="logo_footer">
+      </div>
+      <div class="col-xs-12 col-sm-3">
+        <h5>Enlaces</h5>
+        <ul class="nav-list">
+          <li><a href="http://www.ordenjuridico.gob.mx" target="_blank">Marco Jurídico</a></li>
+          <li><a href="https://transparencia.gob.mx" target="_blank">Transparencia para el pueblo</a></li>
+        </ul>
+      </div>
+      <div class="col-xs-12 col-sm-3">
+        <h5>¿Qué es gob.mx?</h5>
+        <p>Es el portal único de trámites, información y participación ciudadana. <a href="https://www.gob.mx/que-es-gobmx">Leer más</a></p>
+        <ul class="nav-list">
+          <li><a href="https://www.gob.mx/accesibilidad" target="_blank">Declaración de accesibilidad</a></li>
+          <li><a href="https://www.gob.mx/terminos" target="_blank">Términos y Condiciones</a></li>
+        </ul>
+      </div>
+      <div class="col-xs-12 col-sm-3">
+        <h5 class="link-a"><a class="footer" href="https://sidec.buengobierno.gob.mx/#!/" target="_blank">Denuncia contra servidores públicos</a></h5>
+        <span class="col-xs-5 col-sm-12 col-md-11 social-media">Síguenos en</span>
+        <ul class="col-xs-7 col-sm-12 col-md-11 list-inline social-media">
+          <li><a href="https://www.facebook.com/gobmexico" target="_blank"><img alt="Facebook" src="vendor/img/facebook.png"></a></li>
+          <li><a href="https://twitter.com/GobiernoMX" target="_blank"><img alt="Twitter" src="vendor/img/twitter.png"></a></li>
+          <li><a href="https://www.instagram.com/gobmexico/" target="_blank"><img alt="Instagram" src="vendor/img/instagram.png"></a></li>
+          <li><a href="https://www.youtube.com/@gobiernodemexico" target="_blank"><img alt="Youtube" src="vendor/img/youtube.png"></a></li>
+        </ul>
+        <div class="logo-079">
+          <a href="tel:+079" target="_blank"><img src="vendor/img/079.png" alt="logo 079" class="logo-079"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

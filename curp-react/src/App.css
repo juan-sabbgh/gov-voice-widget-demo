@@ -1,0 +1,28 @@
+/* Overrides mínimos: navbar, sub-navbar, breadcrumb, nav-tabs, form-control,
+   btn-primary, wizard-steps, main-footer ya vienen del CSS real de gob.mx
+   (public/vendor/gobmx-main.css). Aquí solo el espaciado que en el sitio
+   real resuelve su propio main.js (no descargado). */
+
+main[role='main'] {
+  margin-top: 130px;
+  padding-bottom: 40px;
+  display: block;
+}
+
+.navbar-brand-logo img {
+  height: 40px;
+}
+
+.buscar h2 {
+  margin-top: 0;
+}
+
+hr.red {
+  border-top: 2px solid #611232;
+  width: 60px;
+  margin-left: 0;
+}
+
+.form-group label {
+  font-weight: 600;
+}
