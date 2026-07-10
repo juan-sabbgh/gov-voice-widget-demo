@@ -8,10 +8,15 @@
  *   1. Busca todos los <form> de la página y les inyecta un botón flotante
  *      de dictado (no toca el DOM del formulario, solo agrega un overlay).
  *   2. Al hacer clic, graba audio con MediaRecorder.
- *   3. Al detener la grabación, envía el audio al backend (placeholder por
- *      ahora, ver CALL_BACKEND_PLACEHOLDER más abajo).
+ *   3. Al detener la grabación, LEE el esquema real del formulario
+ *      (name/label/placeholder/opciones de cada campo — ver
+ *      extractFormSchema) y lo envía junto con el audio al backend
+ *      (placeholder por ahora, ver callBackendPlaceholder más abajo), para
+ *      que el backend sepa exactamente qué campos existen y qué claves
+ *      debe regresar.
  *   4. Cuando "responde" el backend, emite un CustomEvent global
- *      ("voice-assistant:fill") con los datos ya extraídos. La página
+ *      ("voice-assistant:fill") con los datos ya extraídos, usando como
+ *      claves los mismos `name` de los campos del formulario. La página
  *      anfitriona decide cómo acomodarlos en sus propios campos — el
  *      widget nunca escribe directamente en los inputs del host.
  */
@@ -24,20 +29,129 @@
   const MAX_RECORDING_MS = 15000;
 
   /**
+   * Lee el <form> real y arma un esquema JSON con cada campo: name, label,
+   * placeholder, tipo y opciones (para selects). Este esquema es lo que le
+   * dice al backend qué campos existen y con qué `name` exacto debe
+   * regresar cada valor — sin esto, el backend no tendría forma de saber
+   * qué preguntar/extraer para un formulario que nunca ha visto.
+   */
+  function extractFormSchema(form) {
+    const IGNORED_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image']);
+    const fields = form.querySelectorAll('input, select, textarea');
+    const schema = [];
+
+    fields.forEach((field) => {
+      const type = (field.type || field.tagName).toLowerCase();
+      if (IGNORED_TYPES.has(type)) return;
+      if (!field.name) return;
+
+      const entry = {
+        name: field.name,
+        id: field.id || null,
+        type,
+        label: getLabelText(field, form),
+        placeholder: field.placeholder || null,
+      };
+      if (field.maxLength && field.maxLength > 0) entry.maxLength = field.maxLength;
+      if (field.tagName === 'SELECT') {
+        entry.options = Array.from(field.options)
+          .filter((o) => o.value)
+          .map((o) => ({ value: o.value, label: o.textContent.trim() }));
+      }
+      schema.push(entry);
+    });
+
+    return schema;
+  }
+
+  function getLabelText(field, form) {
+    if (field.id) {
+      const lbl = form.querySelector(`label[for="${cssEscape(field.id)}"]`);
+      if (lbl) return lbl.textContent.trim();
+    }
+    const closest = field.closest('label');
+    if (closest) return closest.textContent.trim();
+    return null;
+  }
+
+  function cssEscape(value) {
+    return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
+  }
+
+  function normalize(str) {
+    return (str || '')
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '');
+  }
+
+  function pickOptionValue(entry, fallbackValue, labelKeywords) {
+    if (entry.type && entry.type.indexOf('select') === 0 && entry.options && entry.options.length) {
+      if (labelKeywords) {
+        const norm = labelKeywords.map(normalize);
+        const found = entry.options.find((o) => norm.some((k) => normalize(o.label).includes(k)));
+        if (found) return found.value;
+      }
+      const byValue = entry.options.find((o) => o.value === fallbackValue);
+      if (byValue) return byValue.value;
+      return entry.options[0].value;
+    }
+    return fallbackValue;
+  }
+
+  // Reglas de ejemplo para el mock: en el backend real esto lo resuelve el
+  // LLM a partir de lo que la persona dijo, no un patrón sobre el nombre
+  // del campo. Aquí solo demuestra que el esquema del formulario sí llega
+  // y sí se usa para decidir qué llenar.
+  const MOCK_PATTERNS = [
+    { test: /captcha/, value: () => undefined },
+    { test: /curp/, value: () => 'GOMJ800101HDFRRN09' },
+    { test: /nss|seguridad social/, value: () => '12345678901' },
+    { test: /confirma.*correo|confirma.*email/, value: (e, ctx) => ctx.email },
+    { test: /correo|email/, value: (e, ctx) => ctx.email },
+    { test: /segundo apellido|apellido materno|materno/, value: () => 'Martínez' },
+    { test: /primer apellido|apellido paterno|paterno|^apellido|apellido$/, value: () => 'González' },
+    { test: /nombre/, value: () => 'Juan' },
+    { test: /dia.*nacimiento|^dia$/, value: (e) => pickOptionValue(e, '05') },
+    { test: /mes.*nacimiento|^mes$/, value: (e) => pickOptionValue(e, '05') },
+    { test: /ano.*nacimiento|anio|year/, value: () => '1998' },
+    { test: /sexo|genero/, value: (e) => pickOptionValue(e, 'H', ['hombre']) },
+    { test: /estado|entidad/, value: (e) => pickOptionValue(e, 'DF', ['ciudad de mexico', 'cdmx']) },
+  ];
+
+  function generateMockData(schema) {
+    const ctx = { email: 'usuario@ejemplo.com' };
+    const data = {};
+
+    schema.forEach((entry) => {
+      const haystack = normalize([entry.name, entry.label, entry.placeholder].filter(Boolean).join(' '));
+      const rule = MOCK_PATTERNS.find((p) => p.test.test(haystack));
+      if (!rule) return;
+      const value = rule.value(entry, ctx);
+      if (value !== undefined) data[entry.name] = value;
+    });
+
+    return data;
+  }
+
+  /**
    * TODO: reemplazar este placeholder por la llamada real al backend
    * (FastAPI + Whisper + LLM con Structured Outputs).
    *
    * Contrato esperado:
    *   POST {backendUrl}/voice/transcribe
-   *   body: multipart/form-data con el audio (Blob)
-   *   response: JSON con las entidades ya extraídas y validadas, ej.
-   *     { "curp": "...", "nombres": "...", "fechaNacimiento": "05-05" }
+   *   body: multipart/form-data con el audio (Blob) + el `schema` (JSON)
+   *   response: JSON con las entidades ya extraídas y validadas, con las
+   *     mismas claves `name` que trae el schema, ej.
+   *     { "curp": "...", "nombres": "...", "diaNacimiento": "05" }
    *
    * Ejemplo real (comentado):
    *
-   *   async function callBackend(audioBlob) {
+   *   async function callBackend(audioBlob, schema) {
    *     const formData = new FormData();
    *     formData.append('audio', audioBlob, 'grabacion.webm');
+   *     formData.append('schema', JSON.stringify(schema));
    *     const res = await fetch('https://tu-backend.example.com/voice/transcribe', {
    *       method: 'POST',
    *       body: formData,
@@ -46,26 +160,14 @@
    *     return res.json();
    *   }
    */
-  async function callBackendPlaceholder(audioBlob) {
+  async function callBackendPlaceholder(audioBlob, schema) {
     // Simula latencia de red + procesamiento STT/NLP.
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    // Datos de ejemplo — en producción esto vendría del backend real,
-    // ya extraído del audio grabado (audioBlob.size = ' + audioBlob.size + ' bytes).
-    return {
-      curp: 'GOMJ800101HDFRRN09',
-      nss: '12345678901',
-      correo: 'usuario@ejemplo.com',
-      correoConfirmacion: 'usuario@ejemplo.com',
-      nombres: 'Juan',
-      primerApellido: 'González',
-      segundoApellido: 'Martínez',
-      diaNacimiento: '05',
-      mesNacimiento: '05',
-      selectedYear: '1998',
-      sexo: 'H',
-      claveEntidad: 'DF',
-    };
+    // El mock usa el esquema real del formulario (leído del DOM por
+    // extractFormSchema) para decidir qué claves regresar — en producción
+    // esa misma decisión la toma el LLM del backend a partir del audio.
+    return generateMockData(schema);
   }
 
   const ICON_MIC = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
@@ -285,9 +387,10 @@
       this._setState('processing');
 
       const audioBlob = new Blob(this._chunks, { type: 'audio/webm' });
+      const schema = this._targetForm ? extractFormSchema(this._targetForm) : [];
 
       try {
-        const data = await callBackendPlaceholder(audioBlob);
+        const data = await callBackendPlaceholder(audioBlob, schema);
         this._setState('success');
         this._dispatchFillEvent(data);
         setTimeout(() => this._setState('idle'), 1500);

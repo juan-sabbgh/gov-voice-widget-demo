@@ -33,15 +33,19 @@ $(document).ready(function () {
   $('#submitCancelar').on('click', hideModal);
   $('#submitContinuar').on('click', hideModal);
 
-  // Escucha al widget de dictado por voz y acomoda los datos en los
-  // campos propios de este formulario (el widget nunca los toca directo).
+  // Escucha al widget de dictado por voz. El widget manda los datos usando
+  // como clave el `name` real de cada campo (los leyó del propio <form>),
+  // así que aquí no hace falta mapear campo por campo: solo se busca cada
+  // control por su `name` y se le pone el valor.
   window.addEventListener('voice-assistant:fill', function (event) {
+    const form = (event.detail && event.detail.form) || document.getElementById('registroAseguradoDatosBasicosForm');
     const data = (event.detail && event.detail.data) || {};
+    if (!form) return;
 
-    if (data.curp) $('#registroCurp').val(data.curp);
-    if (data.nss) $('#nss').val(data.nss);
-    if (data.correo) $('#correoInput').val(data.correo);
-    if (data.correoConfirmacion) $('#correoConfirmacionInput').val(data.correoConfirmacion);
+    Object.keys(data).forEach(function (name) {
+      const field = form.elements.namedItem(name);
+      if (field && 'value' in field) field.value = data[name];
+    });
   });
 
 });

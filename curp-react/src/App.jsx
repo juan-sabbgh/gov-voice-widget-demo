@@ -34,22 +34,13 @@ function App() {
 
   // Escucha al widget de dictado por voz y acomoda los datos en el estado
   // de React (el widget nunca toca el DOM de este formulario directamente).
+  // El widget manda los datos usando como clave el `name` real de cada
+  // input/select — como el estado de este formulario usa esos mismos
+  // nombres, alcanza con un merge, sin mapear campo por campo.
   useEffect(() => {
     function handleVoiceFill(event) {
       const data = event.detail?.data || {}
-
-      setForm((prev) => ({
-        ...prev,
-        curp: data.curp ?? prev.curp,
-        nombres: data.nombres ?? prev.nombres,
-        primerApellido: data.primerApellido ?? prev.primerApellido,
-        segundoApellido: data.segundoApellido ?? prev.segundoApellido,
-        diaNacimiento: data.diaNacimiento ?? prev.diaNacimiento,
-        mesNacimiento: data.mesNacimiento ?? prev.mesNacimiento,
-        selectedYear: data.selectedYear ?? prev.selectedYear,
-        sexo: data.sexo ?? prev.sexo,
-        claveEntidad: data.claveEntidad ?? prev.claveEntidad,
-      }))
+      setForm((prev) => ({ ...prev, ...data }))
 
       if (data.curp && !data.nombres) setTab('curp')
       else if (data.nombres) setTab('datos')
